@@ -1,0 +1,9 @@
+stock_code,stock_name,selisih,volume,frekuensi,input_date
+BBRI,Bank Rakyat Indonesia,450,3000000,900,2025-01-15
+BBCA,Bank Central Asia,120,7000000,1800,2025-01-15
+UNVR,Unilever Indonesia,200,5000000,1200,2025-01-15
+ICBP,Indofood CBP,500,4000000,1500,2025-01-15
+ASII,Astra International,350,6000000,1300,2025-01-15
+TLKM,Telkom Indonesia,180,5500000,1100,2025-01-15
+BMRI,Bank Mandiri,400,4500000,950,2025-01-15
+BBTN,Bank Tabungan Negara,280,3500000,850,2025-01-15

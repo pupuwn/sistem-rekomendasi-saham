@@ -1,0 +1,121 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    🔐 QUICK REFERENCE - MULTI-USER SYSTEM                    ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 📋 SETUP AWAL                                                                │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+1. Jalankan Migration:
+   Get-Content database_migration_roles.sql | mysql -u root -p fuzzy_tsukamoto
+
+2. Verifikasi:
+   SELECT username, role FROM users;
+
+3. Test Login:
+   - Admin: admin / admin123
+   - User:  user / user123
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 👥 MANAJEMEN USER                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+Jalankan script:
+   python manage_users.py
+
+Menu:
+   1 = Lihat daftar user
+   2 = Tambah user baru
+   3 = Ubah role user
+   4 = Hapus user
+   5 = Keluar
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 🎯 HAK AKSES                                                                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────┬────────────────────┬──────────────────────┐
+│ Fitur               │ 👑 Admin           │ 👤 User              │
+├─────────────────────┼────────────────────┼──────────────────────┤
+│ Dashboard           │ ✅ Yes             │ ✅ Yes               │
+│ Variabel Fuzzy      │ ✅ Yes             │ ❌ No                │
+│ Aturan Fuzzy        │ ✅ Yes             │ ❌ No                │
+│ Data Saham          │ ✅ Yes             │ ✅ Yes (ONLY THIS!)  │
+│ Proses & Hasil      │ ✅ Yes             │ ✅ Yes               │
+└─────────────────────┴────────────────────┴──────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 🔑 DEFAULT CREDENTIALS                                                       │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────┬───────────┬──────────┬─────────────────────────────────┐
+│ Username │ Password  │ Role     │ Access                          │
+├──────────┼───────────┼──────────┼─────────────────────────────────┤
+│ admin    │ admin123  │ admin    │ Full access (all features)      │
+│ user     │ user123   │ user     │ Limited (stocks & results only) │
+└──────────┴───────────┴──────────┴─────────────────────────────────┘
+
+⚠️  GANTI PASSWORD UNTUK PRODUCTION!
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 🚀 QUICK COMMANDS                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+# Tambah user via SQL:
+mysql -u root -p fuzzy_tsukamoto
+INSERT INTO users (username, password, role) VALUES 
+('newuser', '$2b$12$hash_here', 'user');
+
+# Ubah role via SQL:
+UPDATE users SET role = 'admin' WHERE username = 'user';
+
+# Hapus user via SQL:
+DELETE FROM users WHERE username = 'olduser';
+
+# List semua user:
+SELECT id, username, role, created_at FROM users;
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 🐛 TROUBLESHOOTING                                                           │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+Error: "Kolom 'role' tidak ditemukan"
+→ Jalankan migration script lagi
+
+User tidak bisa login
+→ Cek: SELECT username, role FROM users WHERE username = 'xxx';
+
+Menu masih muncul untuk User biasa
+→ Clear cache browser & restart Streamlit
+
+Lupa password
+→ Gunakan manage_users.py untuk reset atau hapus & buat baru
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 📝 NOTES                                                                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+✓ Password menggunakan bcrypt hash (secure)
+✓ Role disimpan di database (persistent)
+✓ Session state track username & role
+✓ Access control di level halaman (require_admin)
+✓ UI dinamis berdasarkan role (hide/show menu)
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 📞 TESTING CHECKLIST                                                         │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+[ ] Login sebagai Admin → Lihat semua menu
+[ ] Login sebagai User → Hanya lihat Dashboard, Saham, Hasil
+[ ] User coba akses Variabel → Blocked dengan error message
+[ ] User coba akses Aturan → Blocked dengan error message
+[ ] Tambah user baru via manage_users.py
+[ ] Login dengan user baru → Berfungsi
+[ ] Ubah role user → admin → Menu muncul
+[ ] Ubah role user → user → Menu hilang
+[ ] Logout → Session cleared
+[ ] Re-login → Data session restored
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    ✅ MULTI-USER SYSTEM READY TO USE!                        ║
+╚══════════════════════════════════════════════════════════════════════════════╝
