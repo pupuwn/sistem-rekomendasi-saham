@@ -10,29 +10,17 @@ class DefuzzificationEngine:
     def weighted_average(inference_results):
         """
         Metode Weighted Average (Rata-rata Tertimbang) untuk Defuzzifikasi
-        
-        Formula Tsukamoto:
-        Z* = (Σ(αi × zi)) / Σ(αi)
-        
-        Parameters:
-        - inference_results: list of dict dari InferenceEngine.evaluate_all_rules()
-          [
-            {'rule_id': 1, 'alpha': 0.8, 'z': 85.0, 'output_set': 'Low_Risk'},
-            {'rule_id': 2, 'alpha': 0.5, 'z': 50.0, 'output_set': 'Medium_Risk'},
-            ...
-          ]
-        
-        Returns:
-        - float: nilai crisp akhir (Z*)
+        Formula Tsukamoto: Z* = (Σ(αi × zi)) / Σ(αi)
         """
         if not inference_results:
             return 0.0
         
+        # --- PERBAIKAN: Konversi ke float sebelum perhitungan ---
         # Hitung pembilang: Σ(αi × zi)
-        numerator = sum(result['alpha'] * result['z'] for result in inference_results)
+        numerator = sum(float(result['alpha']) * float(result['z']) for result in inference_results)
         
         # Hitung penyebut: Σ(αi)
-        denominator = sum(result['alpha'] for result in inference_results)
+        denominator = sum(float(result['alpha']) for result in inference_results)
         
         # Hindari pembagian dengan nol
         if denominator == 0:
@@ -45,15 +33,10 @@ class DefuzzificationEngine:
     
     @staticmethod
     def get_risk_category(score):
-        """
-        Menentukan kategori risiko berdasarkan skor akhir
+        """Menentukan kategori risiko berdasarkan skor akhir"""
+        # Pastikan score di-handle sebagai float
+        score = float(score)
         
-        Parameters:
-        - score: nilai skor akhir (0-100)
-        
-        Returns:
-        - str: 'Low Risk', 'Medium Risk', atau 'High Risk'
-        """
         if score >= 70:
             return 'Low Risk'
         elif score >= 40:
@@ -63,15 +46,7 @@ class DefuzzificationEngine:
     
     @staticmethod
     def get_risk_label(score):
-        """
-        Mendapatkan label risiko dengan emoji
-        
-        Parameters:
-        - score: nilai skor akhir (0-100)
-        
-        Returns:
-        - str: label dengan emoji
-        """
+        """Mendapatkan label risiko dengan emoji"""
         category = DefuzzificationEngine.get_risk_category(score)
         
         if category == 'Low Risk':
@@ -83,39 +58,19 @@ class DefuzzificationEngine:
     
     @staticmethod
     def calculate_confidence(inference_results):
-        """
-        Menghitung tingkat kepercayaan hasil berdasarkan jumlah rules yang aktif
-        
-        Parameters:
-        - inference_results: list of dict dari InferenceEngine.evaluate_all_rules()
-        
-        Returns:
-        - float: confidence score (0-1)
-        """
+        """Menghitung tingkat kepercayaan hasil berdasarkan jumlah rules yang aktif"""
         if not inference_results:
             return 0.0
         
         # Confidence berdasarkan rata-rata alpha
-        avg_alpha = sum(r['alpha'] for r in inference_results) / len(inference_results)
+        # Konversi ke float untuk keamanan
+        total_alpha = sum(float(r['alpha']) for r in inference_results)
+        avg_alpha = total_alpha / len(inference_results)
         
         return avg_alpha
     
     def defuzzify_with_details(self, inference_results):
-        """
-        Defuzzifikasi dengan informasi detail
-        
-        Parameters:
-        - inference_results: hasil dari InferenceEngine.evaluate_all_rules()
-        
-        Returns:
-        - dict: {
-            'final_score': 85.5,
-            'risk_category': 'Low Risk',
-            'confidence': 0.75,
-            'active_rules': 5,
-            'calculation_details': [...]
-          }
-        """
+        """Defuzzifikasi dengan informasi detail"""
         # Hitung skor akhir
         final_score = self.weighted_average(inference_results)
         
@@ -128,12 +83,16 @@ class DefuzzificationEngine:
         # Detail perhitungan
         calculation_details = []
         for i, result in enumerate(inference_results, 1):
+            # Konversi aman ke float
+            alpha_val = float(result['alpha'])
+            z_val = float(result['z'])
+            
             calculation_details.append({
                 'step': i,
                 'rule': result.get('rule_name', f"R{result['rule_id']}"),
-                'alpha': result['alpha'],
-                'z': result['z'],
-                'contribution': result['alpha'] * result['z']
+                'alpha': alpha_val,
+                'z': z_val,
+                'contribution': alpha_val * z_val
             })
         
         return {
@@ -146,15 +105,7 @@ class DefuzzificationEngine:
     
     @staticmethod
     def format_calculation_table(defuzz_result):
-        """
-        Format hasil perhitungan dalam bentuk tabel string untuk display
-        
-        Parameters:
-        - defuzz_result: hasil dari defuzzify_with_details()
-        
-        Returns:
-        - str: tabel formatted
-        """
+        """Format hasil perhitungan dalam bentuk tabel string untuk display"""
         output = []
         output.append("=" * 60)
         output.append("DETAIL PERHITUNGAN DEFUZZIFIKASI")
@@ -186,25 +137,12 @@ class DefuzzificationEngine:
         
         return "\n".join(output)
 
-
-# Contoh penggunaan
+# Contoh penggunaan (Unit Test sederhana)
 if __name__ == "__main__":
-    # Contoh inference results
     inference_results = [
         {'rule_id': 1, 'rule_name': 'R1', 'alpha': 0.8, 'z': 90.0, 'output_set': 'Low_Risk'},
         {'rule_id': 2, 'rule_name': 'R2', 'alpha': 0.5, 'z': 75.0, 'output_set': 'Low_Risk'},
-        {'rule_id': 3, 'rule_name': 'R3', 'alpha': 0.3, 'z': 50.0, 'output_set': 'Medium_Risk'}
     ]
-    
-    # Test defuzzifikasi
     defuzz = DefuzzificationEngine()
-    
-    # Simple calculation
     final_score = defuzz.weighted_average(inference_results)
     print(f"Skor Akhir: {final_score:.2f}")
-    print(f"Kategori: {defuzz.get_risk_category(final_score)}")
-    print()
-    
-    # Detailed calculation
-    result = defuzz.defuzzify_with_details(inference_results)
-    print(defuzz.format_calculation_table(result))

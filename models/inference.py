@@ -3,120 +3,86 @@ import numpy as np
 class InferenceEngine:
     """
     Engine untuk melakukan Inferensi Fuzzy menggunakan metode Tsukamoto
-    Mengevaluasi aturan IF-THEN dan menghitung α-predikat & z
+    Mengevaluasi aturan IF-THEN dan menghitung α-predikat & z secara dinamis
     """
     
-    def __init__(self, rules):
+    def __init__(self, rules, output_sets_config):
         """
         Parameters:
         - rules: list of dict berisi aturan fuzzy
-          [
-            {
-              'id': 1,
-              'rule_name': 'R1',
-              'volatilitas_set': 'Rendah',
-              'volume_set': 'Tinggi',
-              'frekuensi_set': 'Tinggi',
-              'output_set': 'Low_Risk',
-              'z_value': 40.0  # Nilai z spesifik untuk setiap aturan
-            },
-            ...
-          ]
+        - output_sets_config: dict range output sets (Low_Risk: {min:70, max:100}, etc)
         """
         self.rules = rules
-        # Output sets tidak lagi diperlukan karena z sudah ditentukan per aturan
+        self.output_sets = output_sets_config
     
     def calculate_alpha_predicate(self, fuzzy_inputs, rule):
-        """
-        Menghitung α-predikat menggunakan operator MIN (AND)
+        """Menghitung α-predikat menggunakan operator MIN (AND)"""
+        # Ambil derajat keanggotaan (default 0 jika tidak ada)
+        mu_volatilitas = fuzzy_inputs['Volatilitas'].get(rule['volatilitas_set'], 0.0)
+        mu_volume = fuzzy_inputs['Volume'].get(rule['volume_set'], 0.0)
+        mu_frekuensi = fuzzy_inputs['Frekuensi'].get(rule['frekuensi_set'], 0.0)
         
-        Parameters:
-        - fuzzy_inputs: hasil fuzzifikasi
-          {
-            'Volatilitas': {'Rendah': 0.5, 'Sedang': 0.3, 'Tinggi': 0.0},
-            'Volume': {...},
-            'Frekuensi': {...}
-          }
-        - rule: dict aturan tunggal
-        
-        Returns:
-        - float: nilai α-predikat (0-1)
-        """
-        # Ambil derajat keanggotaan untuk setiap antecedent
-        mu_volatilitas = fuzzy_inputs['Volatilitas'].get(rule['volatilitas_set'], 0)
-        mu_volume = fuzzy_inputs['Volume'].get(rule['volume_set'], 0)
-        mu_frekuensi = fuzzy_inputs['Frekuensi'].get(rule['frekuensi_set'], 0)
-        
-        # Operator AND = MIN
-        alpha = min(mu_volatilitas, mu_volume, mu_frekuensi)
-        
+        # Pastikan float
+        alpha = min(float(mu_volatilitas), float(mu_volume), float(mu_frekuensi))
         return alpha
     
-    def calculate_z_tsukamoto(self, alpha, rule):
+    def calculate_z_tsukamoto(self, alpha, output_set_name):
         """
-        Menghitung nilai z (crisp output) menggunakan metode Tsukamoto.
-        Pada implementasi ini, nilai z diambil langsung dari definisi aturan (z_value).
-        
-        Parameters:
-        - alpha: nilai α-predikat (tidak digunakan dalam perhitungan z ini, tapi dipertahankan untuk konsistensi)
-        - rule: dict aturan tunggal yang sudah termasuk z_value
-        
-        Returns:
-        - float: nilai z (crisp)
+        Menghitung nilai z (crisp output) secara dinamis.
+        Logika Tsukamoto:
+        - Low_Risk (Positif/Bagus): Monoton Naik -> z = min + alpha * (max - min)
+        - High_Risk (Negatif/Buruk): Monoton Turun -> z = max - alpha * (max - min)
+        - Medium_Risk: Diasumsikan Monoton Naik untuk simplifikasi mapping ke skor
         """
-        # Nilai z sudah ditentukan per aturan dalam database
-        return rule.get('z_value', 0.0)
+        # Ambil konfigurasi range output
+        config = self.output_sets.get(output_set_name)
+        if not config:
+            return 0.0
+            
+        min_val = float(config['min_value'])
+        max_val = float(config['max_value'])
+        range_val = max_val - min_val
+        
+        # --- LOGIKA PENENTUAN Z ---
+        if output_set_name == 'High_Risk':
+            # Kurva TURUN: Semakin High Risk (alpha=1), Skor semakin KECIL (mendekati 0)
+            # Z = max - alpha * (max - min)
+            z = max_val - (alpha * range_val)
+        else:
+            # Low_Risk & Medium_Risk
+            # Kurva NAIK: Semakin Low Risk (alpha=1), Skor semakin BESAR (mendekati 100)
+            # Z = min + alpha * (max - min)
+            z = min_val + (alpha * range_val)
+            
+        return z
     
     def evaluate_all_rules(self, fuzzy_inputs):
-        """
-        Evaluasi semua aturan fuzzy
-        
-        Parameters:
-        - fuzzy_inputs: hasil fuzzifikasi dari semua input
-        
-        Returns:
-        - list of dict: [
-            {
-              'rule_id': 1,
-              'rule_name': 'R1',
-              'alpha': 0.5,
-              'z': 40.0,
-              'output_set': 'Low_Risk'
-            },
-            ...
-          ]
-        """
+        """Evaluasi semua aturan fuzzy"""
         results = []
         
         for rule in self.rules:
-            # Hitung α-predikat
+            # 1. Hitung α-predikat
             alpha = self.calculate_alpha_predicate(fuzzy_inputs, rule)
             
-            # Jika α > 0, rule aktif, hitung z
+            # 2. Jika α > 0, rule aktif
             if alpha > 0:
-                # Kirim seluruh objek 'rule' ke fungsi calculate_z_tsukamoto
-                z = self.calculate_z_tsukamoto(alpha, rule)
+                output_set = rule['output_set']
+                
+                # 3. Hitung z secara dinamis (bukan dari DB z_value lagi)
+                z = self.calculate_z_tsukamoto(alpha, output_set)
                 
                 results.append({
                     'rule_id': rule.get('id', 0),
                     'rule_name': rule.get('rule_name', ''),
                     'alpha': alpha,
                     'z': z,
-                    'output_set': rule['output_set']
+                    'output_set': output_set
                 })
         
         return results
-    
+
     def get_fired_rules_summary(self, inference_results):
-        """
-        Mendapatkan ringkasan aturan yang aktif (fired)
-        
-        Parameters:
-        - inference_results: hasil dari evaluate_all_rules()
-        
-        Returns:
-        - dict: statistik aturan yang aktif
-        """
+        """Mendapatkan ringkasan aturan yang aktif"""
         total_rules = len(self.rules)
         fired_rules = len(inference_results)
         
