@@ -396,6 +396,9 @@ def main_app():
         st.title("Navigasi")
         st.write(f"User: {st.session_state.username}")
         if st.button("Dashboard", use_container_width=True): st.session_state.page = 'dashboard'
+        # Menu tambahan untuk User Management (Admin Only)
+        if st.session_state.role == 'admin':
+            if st.button("User", use_container_width=True): st.session_state.page = 'users'
         if st.button("Variabel", use_container_width=True): st.session_state.page = 'variables'
         if st.button("Rules", use_container_width=True): st.session_state.page = 'rules'
         if st.button("Data Saham", use_container_width=True): st.session_state.page = 'stocks'
@@ -408,6 +411,53 @@ def main_app():
     elif st.session_state.page == 'rules': show_rules_management()
     elif st.session_state.page == 'stocks': show_stocks_management()
     elif st.session_state.page == 'calculation': show_calculation_page()
+    elif st.session_state.page == 'users': show_user_management()
+
+def show_user_management():
+    require_admin()
+    st.markdown('<div class="main-header">👥 MANAJEMEN USER</div>', unsafe_allow_html=True)
+    db = get_db_connection()
+    if not db: return
+
+    tab1, tab2 = st.tabs(["List User", "Tambah User"])
+    
+    with tab1:
+        # Menampilkan daftar user (tanpa password)
+        users = db.fetch_all("SELECT id, username, role FROM users ORDER BY username")
+        if users:
+            st.dataframe(pd.DataFrame(users), use_container_width=True, hide_index=True)
+        else:
+            st.info("Belum ada data user user.")
+
+    with tab2:
+        st.subheader("Tambah User Baru")
+        with st.form("add_user_form"):
+            new_username = st.text_input("Username")
+            new_password = st.text_input("Password", type="password")
+            new_role = st.selectbox("Role", ["user", "admin"])
+            
+            if st.form_submit_button("Simpan User Baru"):
+                if new_username and new_password:
+                    # Cek apakah username sudah ada
+                    existing = db.fetch_one("SELECT id FROM users WHERE username = %s", (new_username,))
+                    if existing:
+                        st.error("❌ Username sudah digunakan!")
+                    else:
+                        try:
+                            # Hash password dengan bcrypt
+                            hashed_pw = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                            
+                            query = "INSERT INTO users (username, password, role) VALUES (%s, %s, %s)"
+                            db.execute_query(query, (new_username, hashed_pw, new_role))
+                            
+                            st.success(f"✅ User '{new_username}' berhasil ditambahkan!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Gagal menyimpan: {str(e)}")
+                else:
+                    st.warning("⚠️ Mohon lengkapi username dan password!")
+    
+    db.disconnect()
 
 if __name__ == "__main__":
     if not st.session_state.logged_in:
