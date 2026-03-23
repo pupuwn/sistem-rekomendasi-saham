@@ -28,11 +28,22 @@ class InferenceEngine:
     
     def calculate_z_tsukamoto(self, alpha, output_set_name):
         """
-        Menghitung nilai z (crisp output) secara dinamis.
-        Logika Tsukamoto:
-        - Low_Risk (Positif/Bagus): Monoton Naik -> z = min + alpha * (max - min)
-        - High_Risk (Negatif/Buruk): Monoton Turun -> z = max - alpha * (max - min)
-        - Medium_Risk: Diasumsikan Monoton Naik untuk simplifikasi mapping ke skor
+        Menghitung nilai z (crisp output) secara dinamis sesuai Excel.
+        
+        Rentang Excel:
+        - High_Risk: 0-40 (Grafik Turun)
+        - Medium_Risk: 30-70 (Grafik Segitiga - untuk Tsukamoto kita gunakan monoton naik)
+        - Low_Risk: 60-100 (Grafik Naik)
+        
+        Logika Tsukamoto (fungsi monoton):
+        - High_Risk: Monoton Turun -> z = max - alpha * (max - min)
+        - Medium_Risk: Monoton Naik -> z = min + alpha * (max - min)
+        - Low_Risk: Monoton Naik -> z = min + alpha * (max - min)
+        
+        Note: Meskipun Excel menunjukkan "segitiga" untuk Medium_Risk,
+        di metode Tsukamoto kita menggunakan fungsi monoton untuk consistency.
+        Overlap range (30-40 dan 60-70) akan ditangani secara natural oleh
+        fuzzification process.
         """
         # Ambil konfigurasi range output
         config = self.output_sets.get(output_set_name)
@@ -45,12 +56,15 @@ class InferenceEngine:
         
         # --- LOGIKA PENENTUAN Z ---
         if output_set_name == 'High_Risk':
-            # Kurva TURUN: Semakin High Risk (alpha=1), Skor semakin KECIL (mendekati 0)
+            # Kurva TURUN: Semakin High Risk (alpha=1), Skor semakin KECIL
+            # Range: 0-40, jika alpha=0 -> z=40, alpha=1 -> z=0
             # Z = max - alpha * (max - min)
             z = max_val - (alpha * range_val)
         else:
-            # Low_Risk & Medium_Risk
-            # Kurva NAIK: Semakin Low Risk (alpha=1), Skor semakin BESAR (mendekati 100)
+            # Medium_Risk & Low_Risk
+            # Kurva NAIK: Semakin tinggi alpha, skor semakin BESAR
+            # Medium: 30-70, jika alpha=0 -> z=30, alpha=1 -> z=70
+            # Low: 60-100, jika alpha=0 -> z=60, alpha=1 -> z=100
             # Z = min + alpha * (max - min)
             z = min_val + (alpha * range_val)
             

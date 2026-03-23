@@ -33,7 +33,24 @@ class DefuzzificationEngine:
     
     @staticmethod
     def get_risk_category(score):
-        """Menentukan kategori risiko berdasarkan skor akhir"""
+        """
+        Menentukan kategori risiko berdasarkan skor akhir.
+        
+        PENTING: Threshold kategorisasi berbeda dengan range output sets!
+        
+        Range Output Sets (untuk kalkulasi z dalam inferensi):
+        - High_Risk: 0-40
+        - Medium_Risk: 30-70
+        - Low_Risk: 60-100
+        
+        Threshold Kategorisasi (untuk final category dari skor akhir):
+        - Low Risk: >= 70
+        - Medium Risk: 40-69.99
+        - High Risk: < 40
+        
+        Threshold ini sesuai dengan Excel dan tidak berubah meskipun
+        range output sets berubah.
+        """
         # Pastikan score di-handle sebagai float
         score = float(score)
         

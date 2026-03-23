@@ -56,6 +56,7 @@ st.markdown("""
 # ==========================================
 # SESSION STATE
 # ==========================================
+# Inisialisasi session state
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 if 'username' not in st.session_state:
@@ -65,7 +66,63 @@ if 'role' not in st.session_state:
 if 'page' not in st.session_state:
     st.session_state.page = 'dashboard'
 if 'form_key' not in st.session_state:
-       st.session_state.form_key = 0
+    st.session_state.form_key = 0  # Counter untuk reset form
+
+# Auto-restore session dari query params (untuk persistent login)
+try:
+    query_params = st.query_params
+    if not st.session_state.logged_in and 'session_user' in query_params:
+        stored_username = query_params.get('session_user')
+        stored_role = query_params.get('session_role', 'user')
+        if stored_username:
+            st.session_state.logged_in = True
+            st.session_state.username = stored_username
+            st.session_state.role = stored_role
+except:
+    pass
+
+# ==========================================
+# DATA ATURAN HARDCODED
+# ==========================================
+def get_hardcoded_rules():
+    """
+    Mengembalikan daftar 27 aturan Fuzzy Tsukamoto secara hardcoded.
+    Ini menggantikan fungsi pengambilan data dari database untuk menjaga integritas logika.
+    """
+    return [
+        # --- Aturan Volatilitas RENDAH ---
+        {'id': 1, 'rule_name': 'R1', 'volatilitas_set': 'Rendah', 'volume_set': 'Rendah', 'frekuensi_set': 'Rendah', 'output_set': 'Medium_Risk'},
+        {'id': 2, 'rule_name': 'R2', 'volatilitas_set': 'Rendah', 'volume_set': 'Rendah', 'frekuensi_set': 'Sedang', 'output_set': 'Medium_Risk'},
+        {'id': 3, 'rule_name': 'R3', 'volatilitas_set': 'Rendah', 'volume_set': 'Rendah', 'frekuensi_set': 'Tinggi', 'output_set': 'Low_Risk'},
+        {'id': 4, 'rule_name': 'R4', 'volatilitas_set': 'Rendah', 'volume_set': 'Sedang', 'frekuensi_set': 'Rendah', 'output_set': 'Medium_Risk'},
+        {'id': 5, 'rule_name': 'R5', 'volatilitas_set': 'Rendah', 'volume_set': 'Sedang', 'frekuensi_set': 'Sedang', 'output_set': 'Low_Risk'},
+        {'id': 6, 'rule_name': 'R6', 'volatilitas_set': 'Rendah', 'volume_set': 'Sedang', 'frekuensi_set': 'Tinggi', 'output_set': 'Low_Risk'},
+        {'id': 7, 'rule_name': 'R7', 'volatilitas_set': 'Rendah', 'volume_set': 'Tinggi', 'frekuensi_set': 'Rendah', 'output_set': 'Low_Risk'},
+        {'id': 8, 'rule_name': 'R8', 'volatilitas_set': 'Rendah', 'volume_set': 'Tinggi', 'frekuensi_set': 'Sedang', 'output_set': 'Low_Risk'},
+        {'id': 9, 'rule_name': 'R9', 'volatilitas_set': 'Rendah', 'volume_set': 'Tinggi', 'frekuensi_set': 'Tinggi', 'output_set': 'Low_Risk'},
+
+        # --- Aturan Volatilitas SEDANG ---
+        {'id': 10, 'rule_name': 'R10', 'volatilitas_set': 'Sedang', 'volume_set': 'Rendah', 'frekuensi_set': 'Rendah', 'output_set': 'High_Risk'},
+        {'id': 11, 'rule_name': 'R11', 'volatilitas_set': 'Sedang', 'volume_set': 'Rendah', 'frekuensi_set': 'Sedang', 'output_set': 'Medium_Risk'},
+        {'id': 12, 'rule_name': 'R12', 'volatilitas_set': 'Sedang', 'volume_set': 'Rendah', 'frekuensi_set': 'Tinggi', 'output_set': 'Medium_Risk'},
+        {'id': 13, 'rule_name': 'R13', 'volatilitas_set': 'Sedang', 'volume_set': 'Sedang', 'frekuensi_set': 'Rendah', 'output_set': 'Medium_Risk'},
+        {'id': 14, 'rule_name': 'R14', 'volatilitas_set': 'Sedang', 'volume_set': 'Sedang', 'frekuensi_set': 'Sedang', 'output_set': 'Medium_Risk'},
+        {'id': 15, 'rule_name': 'R15', 'volatilitas_set': 'Sedang', 'volume_set': 'Sedang', 'frekuensi_set': 'Tinggi', 'output_set': 'Low_Risk'},
+        {'id': 16, 'rule_name': 'R16', 'volatilitas_set': 'Sedang', 'volume_set': 'Tinggi', 'frekuensi_set': 'Rendah', 'output_set': 'Medium_Risk'},
+        {'id': 17, 'rule_name': 'R17', 'volatilitas_set': 'Sedang', 'volume_set': 'Tinggi', 'frekuensi_set': 'Sedang', 'output_set': 'Low_Risk'},
+        {'id': 18, 'rule_name': 'R18', 'volatilitas_set': 'Sedang', 'volume_set': 'Tinggi', 'frekuensi_set': 'Tinggi', 'output_set': 'Low_Risk'},
+
+        # --- Aturan Volatilitas TINGGI ---
+        {'id': 19, 'rule_name': 'R19', 'volatilitas_set': 'Tinggi', 'volume_set': 'Rendah', 'frekuensi_set': 'Rendah', 'output_set': 'High_Risk'},
+        {'id': 20, 'rule_name': 'R20', 'volatilitas_set': 'Tinggi', 'volume_set': 'Rendah', 'frekuensi_set': 'Sedang', 'output_set': 'High_Risk'},
+        {'id': 21, 'rule_name': 'R21', 'volatilitas_set': 'Tinggi', 'volume_set': 'Rendah', 'frekuensi_set': 'Tinggi', 'output_set': 'Medium_Risk'},
+        {'id': 22, 'rule_name': 'R22', 'volatilitas_set': 'Tinggi', 'volume_set': 'Sedang', 'frekuensi_set': 'Rendah', 'output_set': 'High_Risk'},
+        {'id': 23, 'rule_name': 'R23', 'volatilitas_set': 'Tinggi', 'volume_set': 'Sedang', 'frekuensi_set': 'Sedang', 'output_set': 'Medium_Risk'},
+        {'id': 24, 'rule_name': 'R24', 'volatilitas_set': 'Tinggi', 'volume_set': 'Sedang', 'frekuensi_set': 'Tinggi', 'output_set': 'Medium_Risk'},
+        {'id': 25, 'rule_name': 'R25', 'volatilitas_set': 'Tinggi', 'volume_set': 'Tinggi', 'frekuensi_set': 'Rendah', 'output_set': 'Medium_Risk'},
+        {'id': 26, 'rule_name': 'R26', 'volatilitas_set': 'Tinggi', 'volume_set': 'Tinggi', 'frekuensi_set': 'Sedang', 'output_set': 'Medium_Risk'},
+        {'id': 27, 'rule_name': 'R27', 'volatilitas_set': 'Tinggi', 'volume_set': 'Tinggi', 'frekuensi_set': 'Tinggi', 'output_set': 'Low_Risk'},
+    ]
 
 # ==========================================
 # FUNGSI HELPER & AUTENTIKASI
@@ -157,15 +214,16 @@ def calculate_all_stocks(db):
         fuzzy_sets_config = get_fuzzy_sets_config(db)
         output_sets_config = get_output_sets_config(db) # Return format: {'Low_Risk': {'min':70.0, ...}}
         
-        # 3. Ambil Rules (Universal Rules)
-        rules = db.fetch_all("SELECT * FROM fuzzy_rules")
+        # 3. Ambil Rules (HARDCODED RULES)
+        # rules = db.fetch_all("SELECT * FROM fuzzy_rules")  <-- KODE LAMA (DATABASE)
+        rules = get_hardcoded_rules()  # <-- KODE BARU (HARDCODED)
+        
         if not rules:
-            st.error("❌ Tidak ada Aturan Fuzzy di database! Jalankan update_database.py dulu.")
+            st.error("❌ Error: Tidak ada aturan fuzzy yang dimuat.")
             return
 
         # 4. Inisialisasi Engine
         fuzz_engine = FuzzificationEngine()
-        # Perbaikan: Masukkan output_sets_config ke InferenceEngine
         inference_engine = InferenceEngine(rules, output_sets_config)
         defuzz_engine = DefuzzificationEngine()
         
@@ -252,6 +310,9 @@ def login_page():
                         st.session_state.logged_in = True
                         st.session_state.username = username
                         st.session_state.role = user_role
+                        # Set query params untuk persistent login
+                        st.query_params['session_user'] = username
+                        st.query_params['session_role'] = user_role
                         st.rerun()
                     else:
                         st.error("❌ Username atau password salah!")
@@ -261,7 +322,10 @@ def login_page():
 def logout():
     st.session_state.logged_in = False
     st.session_state.username = None
+    st.session_state.role = None
     st.session_state.page = 'dashboard'
+    # Clear query params
+    st.query_params.clear()
     st.rerun()
 
 def show_dashboard():
@@ -273,7 +337,8 @@ def show_dashboard():
     with col1:
         st.metric("📈 Total Saham", db.fetch_one("SELECT COUNT(*) as c FROM stock_data")['c'])
     with col2:
-        st.metric("⚙️ Total Rules", db.fetch_one("SELECT COUNT(*) as c FROM fuzzy_rules")['c'])
+        # Menampilkan info rules (sekarang hardcoded 27)
+        st.metric("⚙️ Total Rules", len(get_hardcoded_rules()))
     with col3:
         st.metric("📋 Variabel", db.fetch_one("SELECT COUNT(*) as c FROM fuzzy_variables")['c'])
     with col4:
@@ -316,12 +381,11 @@ def show_variables_management():
 def show_rules_management():
     require_admin()
     st.markdown('<div class="main-header">⚙️ MANAJEMEN ATURAN</div>', unsafe_allow_html=True)
-    db = get_db_connection()
-    if not db: return
-    
-    rules = db.fetch_all("SELECT * FROM fuzzy_rules ORDER BY id")
-    st.dataframe(pd.DataFrame(rules), use_container_width=True, hide_index=True)
-    db.disconnect()
+
+    # Menampilkan aturan hardcoded
+    rules = get_hardcoded_rules()
+    df = pd.DataFrame(rules)
+    st.dataframe(df, use_container_width=True, hide_index=True)
 
 def show_stocks_management():
     st.markdown('<div class="main-header">💹 MANAJEMEN SAHAM</div>', unsafe_allow_html=True)
@@ -347,12 +411,27 @@ def show_stocks_management():
         # Gunakan key yang unik untuk reset form setelah submit
         form_key = f"add_stock_{st.session_state.form_key}"
         with st.form(form_key):
+        # Gunakan key yang unik untuk reset form setelah submit
+        form_key = f"add_stock_{st.session_state.form_key}"
+        with st.form(form_key):
             code = st.text_input("Kode Saham (Contoh: BBCA)")
             name = st.text_input("Nama Saham")
+            selisih = st.number_input("Volatilitas (Selisih)")
             selisih = st.number_input("Volatilitas (Selisih)")
             volume = st.number_input("Volume", min_value=0.0, step=1000.0)
             freq = st.number_input("Frekuensi", min_value=0.0, step=100.0)
             if st.form_submit_button("Simpan"):
+                if code and name:  # Validasi input minimal
+                    db.execute_query(
+                        "INSERT INTO stock_data (stock_code, stock_name, selisih, volume, frekuensi, input_date) VALUES (%s,%s,%s,%s,%s, NOW())",
+                        (code, name, selisih, volume, freq)
+                    )
+                    st.success("✅ Data tersimpan!")
+                    # Increment form key untuk reset form
+                    st.session_state.form_key += 1
+                    st.rerun()
+                else:
+                    st.error("❌ Kode Saham dan Nama Saham harus diisi!")
                 if code and name:  # Validasi input minimal
                     db.execute_query(
                         "INSERT INTO stock_data (stock_code, stock_name, selisih, volume, frekuensi, input_date) VALUES (%s,%s,%s,%s,%s, NOW())",
