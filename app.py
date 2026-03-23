@@ -411,27 +411,12 @@ def show_stocks_management():
         # Gunakan key yang unik untuk reset form setelah submit
         form_key = f"add_stock_{st.session_state.form_key}"
         with st.form(form_key):
-        # Gunakan key yang unik untuk reset form setelah submit
-        form_key = f"add_stock_{st.session_state.form_key}"
-        with st.form(form_key):
             code = st.text_input("Kode Saham (Contoh: BBCA)")
             name = st.text_input("Nama Saham")
-            selisih = st.number_input("Volatilitas (Selisih)")
             selisih = st.number_input("Volatilitas (Selisih)")
             volume = st.number_input("Volume", min_value=0.0, step=1000.0)
             freq = st.number_input("Frekuensi", min_value=0.0, step=100.0)
             if st.form_submit_button("Simpan"):
-                if code and name:  # Validasi input minimal
-                    db.execute_query(
-                        "INSERT INTO stock_data (stock_code, stock_name, selisih, volume, frekuensi, input_date) VALUES (%s,%s,%s,%s,%s, NOW())",
-                        (code, name, selisih, volume, freq)
-                    )
-                    st.success("✅ Data tersimpan!")
-                    # Increment form key untuk reset form
-                    st.session_state.form_key += 1
-                    st.rerun()
-                else:
-                    st.error("❌ Kode Saham dan Nama Saham harus diisi!")
                 if code and name:  # Validasi input minimal
                     db.execute_query(
                         "INSERT INTO stock_data (stock_code, stock_name, selisih, volume, frekuensi, input_date) VALUES (%s,%s,%s,%s,%s, NOW())",
